@@ -15,67 +15,69 @@ from datetime import timedelta
 conn = sqlite3.connect('FINAL.db')
 cur=conn.cursor()
 
-values=[]
+def api_call(date1,base):
+    '''
+    A function which makes a call to the API for data not present in database
+    input: date and base country
+    output: exchange rate wrt that date and base
+    '''
+    url ='https://api.exchangerate.host/'+date1+"?base="+base
+
+    response = requests.get(url)
+    data = response.text
+   #loads is  used to parse a valid JSON string and convert it into a Python Dictionary.
+    parsed = json.loads(data)
+    rates = parsed["rates"]
+    result=rates[country]
+    return result
 
 def write_data_to_db(date1,base):
-  
-   url ='https://api.exchangerate.host/'+date1+"?base="+base
-
-   response = requests.get(url)
-   data = response.text
-   #loads is  used to parse a valid JSON string and convert it into a Python Dictionary.
-   parsed = json.loads(data)
-   rates = parsed["rates"]
-  
-   result=rates[country]
-
-   values.append(result)
-   #print(values)
-
-   primary_key=country+"_"+str(date1)
-   command1 = "INSERT INTO Currency_exchange (primary_key,DATE,COUNTRY,BASE,RATE) VALUES ('{}','{}','{}','{}',{})".format(primary_key,date1,country,base,result)
-   cur.execute(command1)
-   conn.commit()
-   return values
-
-#conn.close()
+    '''
+    a function which writes data to database after API call 
+    input: date and country 
+    output: exchange rate wrt date and base
+    '''
+    rate=api_call(date1,base)
+    primary_key=country+"_"+str(date1)
+    command1 = "INSERT INTO Currency_exchange (primary_key,DATE,COUNTRY,BASE,RATE) VALUES ('{}','{}','{}','{}',{})".format(primary_key,date1,country,base,rate)
+    cur.execute(command1)
+    conn.commit()
+    return rate
 
 def user_fetch(date,base,country):
     '''
    function that gives exchange rate of a country by asking user: 
-   input: date, base country and of which country he wants to see er of
-   output:return exchange rate of user specified input
+   input/params: 
+        date: sring, required
+                %Y-%m-%d
+        base: string,required
+                from country
+        country: string, required
+                to country
+   output/returns:return exchange rate of user specified input
     '''
     command='''SELECT COUNT(primary_key) FROM currency_exchange WHERE currency_exchange.primary_key="'''+country+'''_'''+date+'''"'''
     
     cur.execute(command)
     new_list=cur.fetchone()
-    #print(new_list[0])
+   
 
     if new_list[0]==1:
         print ("yes")
         result=conn.execute('''SELECT RATE FROM currency_exchange WHERE currency_exchange.primary_key="'''+country+'''_'''+date+'''"''' )
-        #print(Cursor.fetchall())
+        
         for row in result:
             print("rate for",country,"is",row[0])
         conn.commit()
-        #conn.close()
+    
         return row[0]
 
     else:
 
-        print("no")
-        write_data_to_db(date,base)
-        return values
+        rate=write_data_to_db(date,base)
+        return rate
 
-def graph_plot(start_dt,end_dt,base,country):
-    '''
-   function plots a graph according to input prvodided by user i.e.
-   input: start date,end date, base country and country to
-   output:displays a graph
-  '''
-    plt.style.use('seaborn')
-  
+def get_date_list(start_dt,end_dt):
     date_list=[]
 
     def daterange(date1, date2):
@@ -85,62 +87,23 @@ def graph_plot(start_dt,end_dt,base,country):
     for dt in daterange(start_dt, end_dt):
         date_list.append(dt.strftime("%Y-%m-%d"))
     print("dates between",start_dt,"and",end_dt,"are",date_list)
+    return date_list
 
+def get_value_list(base,country):
+    values=[]
     pk_list=[]
     command2='''SELECT primary_key FROM currency_exchange'''
     result=cur.execute(command2)
     for row in result:
         pk_list.append(row[0])
 
-    for i in date_list:
-            
-        PK=country+'_'+i
-        if PK in pk_list:
-            
-            result=conn.execute('''SELECT RATE FROM currency_exchange WHERE currency_exchange.primary_key="'''+country+'''_'''+i+'''"''' )
-        
-            for row in result:
-               values.append(row[0])
-           
-            conn.commit()
-               
-        else:
-                #print("no")
-            write_data_to_db(i,base)
-    print(values)
-    plt.plot(date_list, values)
-    plt.xlabel('dates')
-    plt.ylabel('exchange rates')
-    #plt.tight_layout()
-    plt.show()
-
-def avg_rate(start_dt,end_dt,base,country):
-    '''
-    function to display average of currency rates of a country on a range of dates provided by user
-    input:start date, end date, base country, country to
-    output:average of currency rates between those dates
-    '''
-    date_list=[]
-
-    def daterange(date1, date2):
-        for n in range(int ((date2 - date1).days)+1):
-            yield date1 + timedelta(n)
-
-
-    for dt in daterange(start_dt, end_dt):
-        date_list.append(dt.strftime("%Y-%m-%d"))
-    print("dates between",start_dt,"and",end_dt,"are",date_list)
-
-    pk_list=[]
-    command2='''SELECT primary_key FROM currency_exchange'''
-    result=cur.execute(command2)
-    for row in result:
-        pk_list.append(row[0])
+    date_list=get_date_list(start_dt,end_dt)
 
     for i in date_list:
         
-        PK=country+'_'+i
-        if PK in pk_list:
+        pk=country+'_'+i
+        if pk in pk_list:
+            print("yes")
             
             result=conn.execute('''SELECT RATE FROM currency_exchange WHERE currency_exchange.primary_key="'''+country+'''_'''+i+'''"''' )
         
@@ -151,9 +114,35 @@ def avg_rate(start_dt,end_dt,base,country):
                
         else:
             #print("no")
-            write_data_to_db(i,base)
+            result=write_data_to_db(i,base)
+            values.append(result)
+            
     print(values)
-    average=sum(values)/len(values)
+    return values
+
+def graph_plot(start_dt,end_dt,base,country):
+    '''
+   function plots a graph according to input prvodided by user i.e.
+   input: start date,end date, base country and country to
+   output:displays a graph
+  '''
+    
+    plt.style.use('seaborn')
+    value_list=get_value_list(base,country)
+    date_list=get_date_list(start_dt,end_dt)
+    plt.plot(date_list, value_list)
+    plt.xlabel('dates')
+    plt.ylabel('exchange rates')
+    plt.show()
+
+def avg_rate(base,country):
+    '''
+    function to display average of currency rates of a country on a range of dates provided by user
+    input:start date, end date, base country, country to
+    output:average of currency rates between those dates
+    '''
+    value_list=get_value_list(base,country)
+    average=sum(value_list)/len(value_list)
     return average
 
 if __name__ == "__main__":
@@ -329,7 +318,7 @@ if __name__ == "__main__":
                     else:
                         print("invalid")
                         continue
-            print("average btw dates:",avg_rate(start_dt,end_dt,base,country))
+            print("average btw dates:",avg_rate(base,country))
 
         elif choice == 4:
             break
