@@ -30,8 +30,9 @@ Sehar Kansal
 2. country limit i.e. if data is present for that country 
 
 **7. refrences**
-https://python.gotrained.com/python-json-api-tutorial/
-https://www.tutorialspoint.com/sqlite/sqlite_python.htm
+1. https://python.gotrained.com/python-json-api-tutorial/
+2. https://www.tutorialspoint.com/sqlite/sqlite_python.htm
+3. https://exchangerate.host/#/
 
 **8. instructions**
 To run the app:
