@@ -31,18 +31,18 @@ def api_call(date1,base):
     result=rates[country]
     return result
 
-def write_data_to_db(date1,base):
+def write_data_to_db(date1,base,rate):
     '''
     a function which writes data to database after API call 
     input: date and country 
     output: exchange rate wrt date and base
     '''
-    rate=api_call(date1,base)
+   
     primary_key=country+"_"+str(date1)
     command1 = "INSERT INTO Currency_exchange (primary_key,DATE,COUNTRY,BASE,RATE) VALUES ('{}','{}','{}','{}',{})".format(primary_key,date1,country,base,rate)
     cur.execute(command1)
     conn.commit()
-    return rate
+  
 
 def user_fetch(date,base,country):
     '''
@@ -60,7 +60,6 @@ def user_fetch(date,base,country):
     
     cur.execute(command)
     new_list=cur.fetchone()
-   
 
     if new_list[0]==1:
         print ("yes")
@@ -69,15 +68,20 @@ def user_fetch(date,base,country):
         for row in result:
             print("rate for",country,"is",row[0])
         conn.commit()
-    
         return row[0]
 
     else:
-
-        rate=write_data_to_db(date,base)
+        rate=api_call(date,base)
+        write_data_to_db(date,base,rate)
         return rate
+        
 
 def get_date_list(start_dt,end_dt):
+    '''
+    A function that gives all the dates between given 2 dates
+    input: start date and end date
+    output: date list with all the dates within those dates
+    '''
     date_list=[]
 
     def daterange(date1, date2):
@@ -90,6 +94,11 @@ def get_date_list(start_dt,end_dt):
     return date_list
 
 def get_value_list(base,country):
+    '''
+    a function that gives list of values for list of dates
+    input: base and country of which values are needed
+    output: list of values 
+    '''
     values=[]
     pk_list=[]
     command2='''SELECT primary_key FROM currency_exchange'''
@@ -112,10 +121,11 @@ def get_value_list(base,country):
             
             conn.commit()
                
-        else:
-            #print("no")
-            result=write_data_to_db(i,base)
-            values.append(result)
+        else: 
+            rate=api_call(i,base)
+            write_data_to_db(i,base,rate)
+            
+            values.append(rate)
             
     print(values)
     return values
@@ -144,6 +154,7 @@ def avg_rate(base,country):
     value_list=get_value_list(base,country)
     average=sum(value_list)/len(value_list)
     return average
+
 
 if __name__ == "__main__":
 
@@ -187,7 +198,7 @@ if __name__ == "__main__":
                         country_list.append(row[0])
                     
                     if len(base)==3 and base.isupper() and base in country_list:
-                            #print(country_list)
+                           
                         print("yes")
                         break
                     else:
@@ -204,7 +215,7 @@ if __name__ == "__main__":
                         country_list.append(row[0])
                     
                     if len(country)==3 and country.isupper() and country in country_list:
-                            #print(country_list)
+                        
                         print("yes")
                         break
                     else:
@@ -244,7 +255,7 @@ if __name__ == "__main__":
                     country_list.append(row[0])
                     
                 if len(base)==3 and base.isupper() and base in country_list:
-                            #print(country_list)
+                     
                     print("yes")
                     break
                 else:
@@ -261,7 +272,7 @@ if __name__ == "__main__":
                         country_list.append(row[0])
                     
                     if len(country)==3 and country.isupper() and country in country_list:
-                            #print(country_list)
+                           
                         print("yes")
                         break
                     else:
@@ -295,7 +306,7 @@ if __name__ == "__main__":
                         country_list.append(row[0])
                             
                 if len(base)==3 and base.isupper() and base in country_list:
-                                    #print(country_list)
+                                
                         print("yes")
                         break
                 else:
@@ -312,7 +323,7 @@ if __name__ == "__main__":
                         country_list.append(row[0])
                     
                     if len(country)==3 and country.isupper() and country in country_list:
-                            #print(country_list)
+                           
                         print("yes")
                         break
                     else:
@@ -325,3 +336,4 @@ if __name__ == "__main__":
         else:
             print("Invalid input. Please enter number between 1-4 ")        
         print("Thank you for using the currency exchange rate app")
+
