@@ -68,8 +68,6 @@ def user_fetch(date,base,country):
         write_data_to_db(date,base)
         return values
 
-    
-
 def graph_plot(start_dt,end_dt,base,country):
     '''
    function plots a graph according to input prvodided by user i.e.
@@ -83,7 +81,6 @@ def graph_plot(start_dt,end_dt,base,country):
     def daterange(date1, date2):
         for n in range(int ((date2 - date1).days)+1):
             yield date1 + timedelta(n)
-
 
     for dt in daterange(start_dt, end_dt):
         date_list.append(dt.strftime("%Y-%m-%d"))
@@ -301,8 +298,6 @@ if __name__ == "__main__":
                     print("invalid date")
                     continue
 
-            
-            
                 base=input("enter base:")
                 country_list=[]
                 command2='''SELECT COUNTRY FROM currency_exchange'''
