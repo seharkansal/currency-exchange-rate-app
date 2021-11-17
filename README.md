@@ -38,5 +38,5 @@ Sehar Kansal
 To run the app:
 
 ~~~
-python3 database.py
+python3 exchange_rate.py
 ~~~

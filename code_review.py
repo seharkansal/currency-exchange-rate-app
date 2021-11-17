@@ -177,11 +177,7 @@ def avg_rate(base, country):
     output:average of currency rates between those dates
     """
     value_list = get_value_list(base, country)
-    if len(value_list)==0:
-        print("internal error")
-        return 0
     average = sum(value_list) / len(value_list)
-    
     return average
 
 
